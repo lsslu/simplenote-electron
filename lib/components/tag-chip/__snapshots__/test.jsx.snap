@@ -1,0 +1,8 @@
+exports[`TagChip should not introduce visual regressions 1`] = `
+<a
+  className="tag-chip"
+  href="#"
+  onClick={[Function]}>
+  spline
+</a>
+`;
