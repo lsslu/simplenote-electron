@@ -21,7 +21,6 @@ import NavigationBar from './navigation-bar'
 import Auth from './auth'
 import NewNoteIcon from './icons/new-note'
 import TagsIcon from './icons/tags'
-import NoteDisplayMixin from './note-display-mixin'
 import analytics from './analytics'
 import classNames	from 'classnames'
 import {
@@ -104,9 +103,6 @@ const isElectron = ( () => {
 const isElectronMac = () => matchesProperty( 'process.platform', 'darwin' )( window );
 
 export const App = connect( mapStateToProps, mapDispatchToProps )( React.createClass( {
-
-	mixins: [NoteDisplayMixin],
-
 	propTypes: {
 		actions: PropTypes.object.isRequired,
 		appState: PropTypes.object.isRequired,
