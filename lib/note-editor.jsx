@@ -21,13 +21,7 @@ export const NoteEditor = React.createClass( {
 		onSetEditorMode: PropTypes.func.isRequired,
 		onUpdateContent: PropTypes.func.isRequired,
 		onUpdateNoteTags: PropTypes.func.isRequired,
-		onTrashNote: PropTypes.func.isRequired,
-		onRestoreNote: PropTypes.func.isRequired,
-		onShareNote: PropTypes.func.isRequired,
-		onDeleteNoteForever: PropTypes.func.isRequired,
 		onRevisions: PropTypes.func.isRequired,
-		onCloseNote: PropTypes.func.isRequired,
-		onNoteInfo: PropTypes.func.isRequired,
 		onPrintNote: PropTypes.func
 	},
 
@@ -89,7 +83,7 @@ export const NoteEditor = React.createClass( {
 
 	render: function() {
 		let noteContent = '';
-		const { editorMode, note, revisions, fontSize, shouldPrint } = this.props;
+		const { editorMode, note, revisions, fontSize, shouldPrint, noteBucket } = this.props;
 		const revision = this.state.revision || note;
 		const isViewingRevisions = this.state.isViewingRevisions;
 		const tags = revision && revision.data && revision.data.tags || [];
@@ -122,15 +116,9 @@ export const NoteEditor = React.createClass( {
 					onCancelRevision={this.onCancelRevision} />
 				<div className="note-editor-controls theme-color-border">
 					<NoteToolbar
-						note={note}
-						onTrashNote={this.props.onTrashNote}
-						onRestoreNote={this.props.onRestoreNote}
-						onShareNote={this.props.onShareNote}
-						onDeleteNoteForever={this.props.onDeleteNoteForever}
-						onRevisions={this.props.onRevisions}
+						noteBucket={ noteBucket }
 						setIsViewingRevisions={this.setIsViewingRevisions}
-						onCloseNote={this.props.onCloseNote}
-						onNoteInfo={this.props.onNoteInfo} />
+					/>
 				</div>
 				<div className="note-editor-content theme-color-border">
 					{!!markdownEnabled && this.renderModeBar()}
@@ -172,27 +160,13 @@ export const NoteEditor = React.createClass( {
 } );
 
 const {
-	closeNote,
-	deleteNoteForever,
 	noteRevisions,
-	restoreNote,
 	setEditorMode,
 	setShouldPrintNote,
-	showDialog,
-	toggleNoteInfo,
-	trashNote,
 	updateNoteContent,
 	updateNoteTags,
 } = appState.actionCreators;
 const { recordEvent } = tracks;
-
-// gets the index of the note located before the currently selected one
-function getPreviousNoteIndex( note, filteredNotes ) {
-	const noteIndex = function( filteredNote ) {
-		return note.id === filteredNote.id;
-	};
-	return Math.max( filteredNotes.findIndex( noteIndex ) - 1, 0 );
-}
 
 const mapStateToProps = ( {
 	appState: state,
@@ -202,50 +176,29 @@ const mapStateToProps = ( {
 	const filteredNotes = filterNotes( state );
 	const noteIndex = Math.max( state.previousIndex, 0 );
 	const note = state.note ? state.note : filteredNotes[ noteIndex ];
-	const previousIndex = getPreviousNoteIndex( note, filteredNotes );
 	return {
 		editorMode,
 		fontSize,
 		markdownEnabled,
 		note,
-		previousIndex,
 		revisions,
 		shouldPrint,
 	};
 };
 
-const mapDispatchToProps = ( dispatch, { noteBucket, previousIndex, tagBucket } ) => ( {
-	onCloseNote: () =>
-		dispatch( closeNote() ),
-	onDeleteNoteForever: note =>
-		dispatch( deleteNoteForever( { noteBucket, note, previousIndex } ) ),
-	onNoteInfo: () =>
-		dispatch( toggleNoteInfo() ),
+const mapDispatchToProps = ( dispatch, { noteBucket, tagBucket } ) => ( {
 	onNotePrinted: () =>
 		dispatch( setShouldPrintNote( { shouldPrint: false } ) ),
-	onRestoreNote: note => {
-		dispatch( restoreNote( { noteBucket, note, previousIndex } ) );
-		recordEvent( 'editor_note_restored' );
-	},
 	onRevisions: note => {
 		dispatch( noteRevisions( { noteBucket, note } ) );
 		recordEvent( 'editor_versions_accessed' );
 	},
 	onSetEditorMode: mode =>
 		dispatch( setEditorMode( { mode } ) ),
-	onShareNote: note =>
-		dispatch( showDialog( {
-			dialog: { modal: true, type: 'Share' },
-			params: { note },
-		} ) ),
 	onUpdateContent: ( note, content ) =>
 		dispatch( updateNoteContent( { noteBucket, note, content } ) ),
 	onUpdateNoteTags: ( note, tags ) =>
 		dispatch( updateNoteTags( { noteBucket, tagBucket, note, tags } ) ),
-	onTrashNote: note => {
-		dispatch( trashNote( { noteBucket, note, previousIndex } ) );
-		recordEvent( 'editor_note_deleted' );
-	},
 } );
 
 export default connect( mapStateToProps, mapDispatchToProps )( NoteEditor );
