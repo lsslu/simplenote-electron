@@ -16,11 +16,8 @@ import * as Dialogs from './dialogs/index'
 import NoteInfo from './note-info'
 import NoteList from './note-list'
 import NoteEditor	from './note-editor'
-import SearchField from './search-field'
 import NavigationBar from './navigation-bar'
 import Auth from './auth'
-import NewNoteIcon from './icons/new-note'
-import TagsIcon from './icons/tags'
 import NoteDisplayMixin from './note-display-mixin'
 import analytics from './analytics'
 import classNames	from 'classnames'
@@ -42,6 +39,7 @@ import {
 import * as settingsActions from './state/settings/actions';
 
 import filterNotes from './utils/filter-notes';
+import SearchBar from './search-bar';
 
 let ipc = getIpc();
 
@@ -178,7 +176,10 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 		if ( canRun( command ) ) {
 			// newNote expects a bucket to be passed in, but the action method itself wouldn't do that
 			if ( command.action === 'newNote' ) {
-				this.onNewNote();
+				this.props.actions.newNote( {
+					noteBucket: this.props.noteBucket
+				} );
+				analytics.tracks.recordEvent( 'list_note_created' );
 			} else if ( has( this.props, command.action ) ) {
 				const { action, ...args } = command;
 
@@ -214,12 +215,6 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 		} );
 	},
 
-	onSearchFocused: function() {
-		this.props.actions.setSearchFocus( {
-			searchFocus: false
-		} );
-	},
-
 	onNotesIndex: function() {
 		this.props.actions.loadNotes( {
 			noteBucket: this.props.noteBucket
@@ -228,13 +223,6 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 
 	onNoteRemoved: function() {
 		this.onNotesIndex();
-	},
-
-	onNewNote: function() {
-		this.props.actions.newNote( {
-			noteBucket: this.props.noteBucket
-		} );
-		analytics.tracks.recordEvent( 'list_note_created' );
 	},
 
 	onNoteUpdate: function( noteId, data, original, patch, isIndexing ) {
@@ -297,11 +285,6 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 			tagBucket: this.props.tagBucket,
 			tags
 		} );
-	},
-
-	onSearch: function( filter ) {
-		this.props.actions.search( { filter } );
-		analytics.tracks.recordEvent( 'list_notes_searched' );
 	},
 
 	initializeElectron() {
@@ -467,17 +450,7 @@ export const App = connect( mapStateToProps, mapDispatchToProps )( React.createC
 									onOutsideClick={this.onToolbarOutsideClick} />
 							}
 							<div className="source-list theme-color-bg theme-color-fg">
-								<div className="search-bar theme-color-border">
-									<button title="Tags" className="button button-borderless" onClick={() => this.props.actions.toggleNavigation() }>
-										<TagsIcon />
-									</button>
-									<SearchField
-										onSearch={this.onSearch}
-										onSearchFocused={this.onSearchFocused} />
-									<button title="New Note" className="button button-borderless" disabled={state.showTrash} onClick={this.onNewNote}>
-										<NewNoteIcon />
-									</button>
-								</div>
+								<SearchBar noteBucket={ noteBucket } />
 								<NoteList noteBucket={ noteBucket } />
 							</div>
 							<NoteEditor
