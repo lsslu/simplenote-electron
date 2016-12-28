@@ -3,6 +3,11 @@ import { connect } from 'react-redux';
 import appState from './flux/app-state';
 import { tracks } from './analytics';
 
+const {
+	search,
+	setSearchFocus,
+} = appState.actionCreators;
+const { recordEvent } = tracks;
 const KEY_ESC = 27;
 
 export class SearchField extends Component {
@@ -52,12 +57,6 @@ export class SearchField extends Component {
 		);
 	}
 };
-
-const {
-	search,
-	setSearchFocus,
-} = appState.actionCreators;
-const { recordEvent } = tracks;
 
 const mapStateToProps = ( { appState: state } ) => ( {
 	query: state.filter,
