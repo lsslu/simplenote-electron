@@ -1,9 +1,15 @@
 import React, { PropTypes } from 'react'
+import { connect } from 'react-redux';
 import TagChip from './tag-chip'
 import classNames from 'classnames';
 import analytics from './analytics';
+import { get } from 'lodash';
+import appState from './flux/app-state';
+import filterNotes from './utils/filter-notes';
 
-export default React.createClass( {
+const { updateNoteTags } = appState.actionCreators;
+
+export const TagField = React.createClass( {
 
 	propTypes: {
 		tags: PropTypes.array,
@@ -39,7 +45,7 @@ export default React.createClass( {
 	addTag: function( tags ) {
 		tags = tags.trim().replace( /\s+/g, ',' ).split( ',' );
 		tags = this.props.tags.concat( tags );
-		this.props.onUpdateNoteTags( tags );
+		this.props.onUpdateNoteTags( this.props.note, tags );
 		analytics.tracks.recordEvent( 'editor_tag_added' );
 	},
 
@@ -62,7 +68,7 @@ export default React.createClass( {
 			state.selectedTag = -1;
 		}
 
-		this.props.onUpdateNoteTags( tags );
+		this.props.onUpdateNoteTags( this.props.note, tags );
 
 		this.setState( state );
 		analytics.tracks.recordEvent( 'editor_tag_removed' );
@@ -145,3 +151,24 @@ export default React.createClass( {
 	}
 
 } );
+
+const mapStateToProps = ( {
+	appState: state,
+	revision: { selectedRevision },
+} ) => {
+	const filteredNotes = filterNotes( state );
+	const noteIndex = Math.max( state.previousIndex, 0 );
+	const note = state.note ? state.note : filteredNotes[ noteIndex ];
+	const revision = selectedRevision || note;
+	return {
+		note,
+		tags: get( revision, 'data.tags', [] ),
+	};
+};
+
+const mapDispatchToProps = ( dispatch, { noteBucket, tagBucket } ) => ( {
+	onUpdateNoteTags: ( note, tags ) =>
+		dispatch( updateNoteTags( { noteBucket, tagBucket, note, tags } ) ),
+} );
+
+export default connect( mapStateToProps, mapDispatchToProps )( TagField );

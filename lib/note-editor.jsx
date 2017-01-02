@@ -12,17 +12,11 @@ import filterNotes from './utils/filter-notes';
 import ModeBar from './mode-bar';
 import { selectRevision } from './state/revision/actions';
 
-const {
-	setShouldPrintNote,
-	updateNoteTags,
-} = appState.actionCreators;
+const { setShouldPrintNote } = appState.actionCreators;
 
 export const NoteEditor = React.createClass( {
 	propTypes: {
-		note: PropTypes.object,
-		fontSize: PropTypes.number,
 		shouldPrint: PropTypes.bool,
-		onUpdateNoteTags: PropTypes.func.isRequired,
 		onPrintNote: PropTypes.func
 	},
 
@@ -53,15 +47,13 @@ export const NoteEditor = React.createClass( {
 		const {
 			fontSize,
 			isTrashed,
-			note,
+			markdownEnabled,
 			noteBucket,
 			revision,
 			selectedRevision,
 			shouldPrint,
-			tags,
+			tagBucket,
 		} = this.props;
-
-		const markdownEnabled = get( revision, 'data.systemTags', '' ).indexOf( 'markdown' ) !== -1;
 
 		const classes = classNames( 'note-editor', 'theme-color-bg', 'theme-color-fg', {
 			revisions: selectedRevision,
@@ -96,9 +88,7 @@ export const NoteEditor = React.createClass( {
 					dangerouslySetInnerHTML={ { __html: noteContent } } />
 				}
 				{ ! isTrashed &&
-					<TagField
-						tags={tags}
-						onUpdateNoteTags={this.props.onUpdateNoteTags.bind( null, note ) } />
+					<TagField noteBucket={ noteBucket } tagBucket={ tagBucket } />
 				}
 			</div>
 		)
@@ -108,7 +98,7 @@ export const NoteEditor = React.createClass( {
 const mapStateToProps = ( {
 	appState: state,
 	revision: { selectedRevision },
-	settings: { fontSize, markdownEnabled },
+	settings: { fontSize },
 } ) => {
 	const filteredNotes = filterNotes( state );
 	const noteIndex = Math.max( state.previousIndex, 0 );
@@ -117,21 +107,17 @@ const mapStateToProps = ( {
 	return {
 		fontSize,
 		isTrashed: !! ( note && note.data.deleted ),
-		markdownEnabled,
-		note,
+		markdownEnabled: get( revision, 'data.systemTags', '' ).indexOf( 'markdown' ) !== -1,
 		revision,
 		selectedRevision,
 		shouldPrint: state.shouldPrint,
-		tags: get( revision, 'data.tags', [] ),
 	};
 };
 
-const mapDispatchToProps = ( dispatch, { noteBucket, tagBucket } ) => ( {
+const mapDispatchToProps = dispatch => ( {
 	onCancelRevision: () => dispatch( selectRevision( null ) ),
 	onNotePrinted: () =>
 		dispatch( setShouldPrintNote( { shouldPrint: false } ) ),
-	onUpdateNoteTags: ( note, tags ) =>
-		dispatch( updateNoteTags( { noteBucket, tagBucket, note, tags } ) ),
 } );
 
 export default connect( mapStateToProps, mapDispatchToProps )( NoteEditor );
